@@ -1,112 +1,148 @@
-# Tuya Smart Plug Metrics Exporter
+# Tuya SmartPlug Exporter
 
-Этот проект экспортирует метрики для устройств Tuya Smart Plug в формат Prometheus. Он собирает данные о мощности, напряжении, токе, состоянии устройства и проектирует потребление энергии на день в киловатт-часах (kWh). Данные экспортируются через HTTP сервер, который Prometheus может использовать для сбора метрик.
-
-## Описание
-
-- **Метрики**:
-  - `tuya_smartplug_power`: Общая потребляемая мощность в ваттах.
-  - `tuya_smartplug_voltage`: Электрическое напряжение в вольтах.
-  - `tuya_smartplug_current`: Ток в миллиамперах.
-  - `tuya_smartplug_switch_on`: Состояние устройства (включено или выключено).
-  - `tuya_smartplug_power_kwh_day`: Проекция потребления энергии в киловатт-часах на день.
-
-- **Формат**: Prometheus Gauge
-- **Сервер**: HTTP сервер, работающий на порту 9155, доступен для сбора метрик.
-
-## Требования
-
-- Python 3.7+
-- Библиотеки:
-  - `yaml` для работы с конфигурацией.
-  - `tuyapower` для взаимодействия с устройствами Tuya.
-  - `prometheus_client` для экспорта метрик в Prometheus.
-  - `logging` для логирования событий.
+Этот проект — это экспортер для интеграции с Prometheus, который позволяет собирать метрики с умных розеток Tuya, используя их API. Экспортер собирает информацию о мощности, токе, напряжении и состоянии устройства, а также рассчитывает проекцию потребления энергии в кВт·ч за сутки.
 
 ## Установка
 
-1. Клонируйте репозиторий:
+### 1. С использованием Docker
 
-   ```bash
-   git clone https://github.com/gizex/tuya-smartplug-exporter.git
-   cd tuya-smartplug-exporter
-   ```
+Самый простой способ запустить экспортёр — это использовать Docker. Мы предоставляем готовый образ, который можно загрузить с Docker Hub.
 
-2. Установите зависимости:
+#### Запуск с использованием Docker
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Убедитесь, что у вас есть доступ к устройства Tuya и получите необходимые данные (ID устройства, ключ API и IP).
-
-4. Создайте файл конфигурации `config.yaml` с настройками для ваших устройств:
-
-   ```yaml
-   - name: "socket-2-prxmx-2"
-     id: "device_id"
-     key: "device_key"
-     ip: "192.168.1.100"
-     protocol: "v1.3"
-   ```
-
-   Укажите информацию для каждого устройства Tuya, с которым вы хотите работать.
-
-## Запуск
-
-Для запуска экспортера выполните следующую команду:
+1. **Запуск контейнера с использованием образа Docker Hub**:
 
 ```bash
-python tuya_exporter.py
+docker run -d \
+  -p 9155:9155 \
+  -v ./config.yaml:/app/config.yaml \
+  docker.io/gizex/tuya-smartplug-exporter:latest
 ```
 
-Сервер будет работать на порту `9155`. Prometheus сможет собирать метрики с этого адреса:
+Этот командный запуск создаст контейнер, который будет слушать порт `9155` и монтировать файл конфигурации `config.yaml` из локальной директории на хосте в контейнер.
 
+- `-p 9155:9155` — пробрасывает порт `9155`, чтобы Prometheus мог собирать метрики.
+- `-v ./config.yaml:/app/config.yaml` — монтирует файл конфигурации с настройками устройств.
+
+#### Пример содержимого `config.yaml`:
+
+```yaml
+- name: "socket-2-prxmx-2"
+  id: "your-device-id"
+  key: "your-device-key"
+  ip: "192.168.1.100"
+  protocol: "v3.3"
+
+- name: "socket-4-prxmx-1"
+  id: "your-device-id"
+  key: "your-device-key"
+  ip: "192.168.1.101"
+  protocol: "v3.4"
 ```
-http://<your-server-ip>:9155/metrics
+
+### 2. С использованием Docker Compose
+
+Если ты хочешь использовать `docker-compose` для упрощения процесса развертывания, создавай файл `docker-compose.yml` с таким содержимым:
+
+```yaml
+version: '3.8'
+
+services:
+  tuya-smartplug-exporter:
+    image: docker.io/gizex/tuya-smartplug-exporter:latest
+    container_name: tuya-smartplug-exporter
+    ports:
+      - "9155:9155"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    restart: always
+    environment:
+      - TZ=Europe/Moscow  # Устанавливаем временную зону
 ```
+
+После этого ты можешь запустить проект с помощью команды:
+
+```bash
+docker-compose up -d
+```
+
+Контейнер будет автоматически перезапускаться при сбоях и использовать конфигурацию из файла `config.yaml`.
+
+### 3. Локальная сборка Docker-образа
+
+Если ты хочешь собрать образ самостоятельно, используй следующий `Dockerfile`:
+
+```dockerfile
+# Используем официальный Python образ
+FROM python:3.9-slim
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем файлы проекта в контейнер
+COPY . /app
+
+# Устанавливаем зависимости
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Открываем порт для Prometheus
+EXPOSE 9155
+
+# Запускаем приложение
+CMD ["python", "main.py"]
+```
+
+Затем собери образ:
+
+```bash
+docker build -t gizex/tuya-smartplug-exporter:latest .
+```
+
+И запусти его:
+
+```bash
+docker run -d -p 9155:9155 -v ./config.yaml:/app/config.yaml gizex/tuya-smartplug-exporter:latest
+```
+
+## Метрики
+
+Экспортер публикует следующие метрики:
+
+- `tuya_smartplug_power` — общая мощность, используемая устройством, в ваттах.
+- `tuya_smartplug_voltage` — напряжение устройства в вольтах.
+- `tuya_smartplug_current` — ток устройства в миллиамперах.
+- `tuya_smartplug_switch_on` — состояние устройства (1 для включенного, 0 для выключенного).
+- `tuya_smartplug_power_kwh_day` — проекция потребления энергии на день в кВт·ч.
+
+## Конфигурация
+
+Конфигурация устройств хранится в файле `config.yaml`, где каждый объект описывает одно устройство Tuya. Пример конфигурации:
+
+```yaml
+- name: "socket-2-prxmx-2"
+  id: "your-device-id"
+  key: "your-device-key"
+  ip: "192.168.1.100"
+  protocol: "v3.3"
+
+- name: "socket-4-prxmx-1"
+  id: "your-device-id"
+  key: "your-device-key"
+  ip: "192.168.1.101"
+  protocol: "v3.4"
+```
+
+- `name`: Имя устройства (можно использовать для меток в Prometheus).
+- `id`: Идентификатор устройства (получается через Tuya API).
+- `key`: Ключ устройства (получается через Tuya API).
+- `ip`: IP-адрес устройства.
+- `protocol`: Протокол для связи (например, `v3.4`).
+
+## Примечания
+
+- Убедись, что все устройства, указанные в конфигурации, доступны по сети и правильно настроены.
+- По умолчанию экспортер будет собирать данные каждую секунду, но это можно настроить в самом коде, если необходимо.
 
 ## Логирование
 
-Экспортер использует базовое логирование:
-
-- **INFO**: Старт сервера, успешная загрузка конфигурации и обновление метрик.
-- **ERROR**: Ошибки при загрузке конфигурации или получении данных от устройств.
-- **DEBUG**: Обновление данных для каждого устройства.
-
-Вы можете настроить уровень логирования, изменив `logging.basicConfig(level=logging.INFO)` в коде.
-
-## Пример метрик
-
-Пример метрики для мощности:
-
-```
-# HELP tuya_smartplug_power Total power used, in Watts
-# TYPE tuya_smartplug_power gauge
-tuya_smartplug_power{device="socket-2-prxmx-2"} 76.1
-tuya_smartplug_power{device="socket-4-prxmx-1"} 19.9
-# HELP tuya_smartplug_voltage Electrical voltage, in Volts
-# TYPE tuya_smartplug_voltage gauge
-tuya_smartplug_voltage{device="socket-2-prxmx-2"} 223.5
-tuya_smartplug_voltage{device="socket-4-prxmx-1"} 229.5
-# HELP tuya_smartplug_current Current in milliamps
-# TYPE tuya_smartplug_current gauge
-tuya_smartplug_current{device="socket-2-prxmx-2"} 414.0
-tuya_smartplug_current{device="socket-4-prxmx-1"} 101.0
-# HELP tuya_smartplug_switch_on Whether the plug is switched on (1 for on, 0 for off)
-# TYPE tuya_smartplug_switch_on gauge
-tuya_smartplug_switch_on{device="socket-2-prxmx-2"} 1.0
-tuya_smartplug_switch_on{device="socket-4-prxmx-1"} 1.0
-# HELP tuya_smartplug_power_kwh_day Projected power consumption in kWh per day
-# TYPE tuya_smartplug_power_kwh_day gauge
-tuya_smartplug_power_kwh_day{device="socket-2-prxmx-2"} 1.8264
-tuya_smartplug_power_kwh_day{device="socket-4-prxmx-1"} 0.4775999999999999
-```
-
-## Автор
-
-**Gizex** (https://github.com/gizex)
-
-## Лицензия
-
-Этот проект лицензирован под MIT.
+Приложение выводит логи в консоль с использованием стандартного Python логирования, чтобы отслеживать состояние и ошибки. Вы можете изменить уровень логирования в коде, если хотите получать более подробную информацию.

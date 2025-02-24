@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  tuya-smartplug-exporter:
+    image: gizex/tuya-smartplug-exporter:latest
+    ports:
+      - "9155:9155"  # Порт для Prometheus
+    volumes:
+      - ./config.yaml:/app/config.yaml  # Монтируем файл конфигурации
+    restart: always
+    environment:
+      - TZ=Europe/Moscow  # Устанавливаем временную зону
