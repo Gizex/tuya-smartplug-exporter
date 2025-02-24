@@ -1,0 +1,10 @@
+- name: name-1
+  id: bff9************68c
+  key: 'PASSWORD'
+  ip: 10.0.3.12
+  protocol: 3.3
+- name: name-2
+  id: bf**************34twea
+  key: 'PASSWORD'
+  ip: 10.0.3.56
+  protocol: 3.4
