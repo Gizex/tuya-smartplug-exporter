@@ -1,6 +1,3 @@
-Вот пример README для твоего проекта:
-
-```markdown
 # Tuya Smart Plug Metrics Exporter
 
 Этот проект экспортирует метрики для устройств Tuya Smart Plug в формат Prometheus. Он собирает данные о мощности, напряжении, токе, состоянии устройства и проектирует потребление энергии на день в киловатт-часах (kWh). Данные экспортируются через HTTP сервер, который Prometheus может использовать для сбора метрик.
@@ -31,7 +28,7 @@
 1. Клонируйте репозиторий:
 
    ```bash
-   git clone https://github.com/yourusername/tuya-smartplug-exporter.git
+   git clone https://github.com/gizex/tuya-smartplug-exporter.git
    cd tuya-smartplug-exporter
    ```
 
