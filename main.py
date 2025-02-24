@@ -32,7 +32,7 @@ def collect_metrics(devices):
             on, w, mA, V, err = tuyapower.deviceInfo(device_id, ip, key, protocol)
             power_gauge.labels(device=name).set(w)
             voltage_gauge.labels(device=name).set(V)
-            current_gauge.labels(device=name).set(mA)
+            current_gauge.labels(device=name).set(mA / 1000.0)  # Преобразуем миллиамперы в амперы
             state_gauge.labels(device=name).set(1 if on else 0)
 
             # Проекция потребления энергии на день (в кВт·ч)
