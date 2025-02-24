@@ -84,6 +84,23 @@ http://<your-server-ip>:9155/metrics
 # HELP tuya_smartplug_power Total power used, in Watts
 # TYPE tuya_smartplug_power gauge
 tuya_smartplug_power{device="socket-2-prxmx-2"} 76.1
+tuya_smartplug_power{device="socket-4-prxmx-1"} 19.9
+# HELP tuya_smartplug_voltage Electrical voltage, in Volts
+# TYPE tuya_smartplug_voltage gauge
+tuya_smartplug_voltage{device="socket-2-prxmx-2"} 223.5
+tuya_smartplug_voltage{device="socket-4-prxmx-1"} 229.5
+# HELP tuya_smartplug_current Current in milliamps
+# TYPE tuya_smartplug_current gauge
+tuya_smartplug_current{device="socket-2-prxmx-2"} 414.0
+tuya_smartplug_current{device="socket-4-prxmx-1"} 101.0
+# HELP tuya_smartplug_switch_on Whether the plug is switched on (1 for on, 0 for off)
+# TYPE tuya_smartplug_switch_on gauge
+tuya_smartplug_switch_on{device="socket-2-prxmx-2"} 1.0
+tuya_smartplug_switch_on{device="socket-4-prxmx-1"} 1.0
+# HELP tuya_smartplug_power_kwh_day Projected power consumption in kWh per day
+# TYPE tuya_smartplug_power_kwh_day gauge
+tuya_smartplug_power_kwh_day{device="socket-2-prxmx-2"} 1.8264
+tuya_smartplug_power_kwh_day{device="socket-4-prxmx-1"} 0.4775999999999999
 ```
 
 ## Автор
